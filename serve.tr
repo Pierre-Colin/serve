@@ -43,7 +43,7 @@ utility conforms to XBD
 with the following options:
 
 .IP "\fB\-a\fP \fIaddress\fP" 10
-Specifies the communications domain and address on which to accept connections.
+Specify the communications domain and address on which to accept connections.
 If absent, the value
 .I inet
 is assumed.  The value is a list of tokens separated by space characters.  The
@@ -65,29 +65,28 @@ for Unix socket domain, the next token being the path to the socket to be
 created, the maximum path length supported depending on the operating system.
 
 .IP "\fB\-t\fP \fItype\fP" 10
-Specifies the socket type.  If absent, the value
+Specify the socket type.  If absent, the value
 .I stream
 is assumed.  Possible values are:
 
 .IP "           *" 14
 .I stream
-for high-reliability connections, corresponding to POSIX
-.I SOCK_STREAM .
+for byte-stream sockets, corresponding to POSIX
+.IR SOCK_STREAM .
 
 .IP "           *" 14
 .I dgram
-for high-speed connections, corresponding to POSIX
-.I SOCK_DGRAM .
+for datagram sockets, corresponding to POSIX
+.IR SOCK_DGRAM .
 
 .IP "           *" 14
 .I seqpacket
-for sequenced packets, corresponding to POSIX
-.I SOCK_SEQPACKET .
+for sequenced-packet sockets, corresponding to POSIX
+.IR SOCK_SEQPACKET .
 
 .IP "\fB\-p\fP \fIprotocol\fP" 10
-Specifies the protocol specification.  If absent, defaults to an OS-specified
-default value determined by the communications domain and socket type.
-Currently unimplemented.
+Specify the protocol specification.  If absent, defaults to an OS-specified
+default value determined by the socket type.  Currently unimplemented.
 
 .SH OPERANDS
 
@@ -130,14 +129,14 @@ The following environment variables affect the execution of
 Provide a default value for the internationalization variables that are unset
 or null.
 .IP "\fILC_ALL\fP" 10
-If set to a non-empty string value, override the values of all the othe
+If set to a non-empty string value, override the values of all the other
 internationalization variables.
 .IP "\fILC_COLLATE\fP" 10
-See POSIX.
+Specify which locale to use for collation.
 .IP "\fILC_CTYPE\fP" 10
-See POSIX.
+Specify which locale to use to classify and convert between characters.
 .IP "\fILC_NUMERIC\fP" 10
-See POSIX.
+Specify which locale to use to read and write numeric values.
 
 .SH "ASYNCHRONOUS EVENTS"
 
