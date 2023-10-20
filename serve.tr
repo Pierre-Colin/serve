@@ -1,0 +1,237 @@
+.TH SERVE 1 serve
+.SH NAME
+serve
+\(em open a server executing another command as a session
+.SH SYNOPSIS
+.nf
+serve \fB[\fR-a address\fB]\fR \fB[\fR-t type\fB]\fR \fB[\fR-p protocol\fB]\fR \fIcommand\fR
+.fi
+.SH DESCRIPTION
+The
+.B serve
+utility opens a socket as if by a call to the
+.I socket()
+function with arguments derived from the values of the
+.B \-a
+.IR address ,
+.B \-t
+.I type
+and
+.B \-p
+.I protocol
+options.  Then, it binds to an address derived from the
+.B \-a
+.I address
+option and enters a loop where it accepts incoming connections and runs the
+command specified in the
+.I command
+operand as if by calling
+.I sh
+.B \-c
+.IR command .
+In the worker process, the standard input and standard output are directly
+piped to the connection socket of the accepted connection.  Bytes sent through
+standard error are line-buffered and printed to the standard input of
+.IR serve
+with each line preceded by the process ID of the worker process.
+
+.SH OPTIONS
+The
+.I serve
+utility conforms to XBD
+.I Syntax Utility Guidelines
+with the following options:
+
+.IP "\fB\-a\fP \fIaddress\fP" 10
+Specifies the communications domain and address on which to accept connections.
+If absent, the value
+.I inet
+is assumed.  The value is a list of tokens separated by space characters.  The
+first token specifies the communications domain.  Possible values are:
+
+.IP "           *" 14
+.I inet
+for IPv4, the next token being the string representation of the IPv4 address on
+which to accept connections, followed by a token giving the port number;
+
+.IP "           *" 14
+.I inet6
+for IPv6, the next token being the string representation of the IPv6 address on
+which to accept connections, followed by a token giving the port number;
+
+.IP "           *" 14
+.I unix
+for Unix socket domain, the next token being the path to the socket to be
+created, the maximum path length supported depending on the operating system.
+
+.IP "\fB\-t\fP \fItype\fP" 10
+Specifies the socket type.  If absent, the value
+.I stream
+is assumed.  Possible values are:
+
+.IP "           *" 14
+.I stream
+for high-reliability connections, corresponding to POSIX
+.I SOCK_STREAM .
+
+.IP "           *" 14
+.I dgram
+for high-speed connections, corresponding to POSIX
+.I SOCK_DGRAM .
+
+.IP "           *" 14
+.I seqpacket
+for sequenced packets, corresponding to POSIX
+.I SOCK_SEQPACKET .
+
+.IP "\fB\-p\fP \fIprotocol\fP" 10
+Specifies the protocol specification.  If absent, defaults to an OS-specified
+default value determined by the communications domain and socket type.
+Currently unimplemented.
+
+.SH OPERANDS
+
+The operand
+.I command
+specifies the command to be run on all sessions.  Each time a connection is
+accepted, a new process is created as if by a call to the
+.I fork()
+function, and the specified command is run as if by
+.B sh \-c
+.IR command .
+The standard input and output of the process created are set to be copies of
+the file description of the socket of the accepted connection.  The error
+output of the process created is caught by the
+.I serve
+utility, line-buffered and printed to standard output every time a new line is
+complete, each line being prepended by the process ID of the process created.
+In the process created, the
+.I REMOTE
+environment variable is set to be a string representation of the accepted
+connection in the same format as for the
+.B \-a
+.I address
+option.
+
+.SH STDIN
+
+Not used.
+
+.SH "INPUT FILES"
+
+None.
+
+.SH "ENVIRONMENT VARIABLES"
+
+The following environment variables affect the execution of
+.IR serve :
+
+.IP "\fILANG\fP" 10
+Provide a default value for the internationalization variables that are unset
+or null.
+.IP "\fILC_ALL\fP" 10
+If set to a non-empty string value, override the values of all the othe
+internationalization variables.
+.IP "\fILC_COLLATE\fP" 10
+See POSIX.
+.IP "\fILC_CTYPE\fP" 10
+See POSIX.
+.IP "\fILC_NUMERIC\fP" 10
+See POSIX.
+
+.SH "ASYNCHRONOUS EVENTS"
+
+Upon receiving SIGINT for the first time, a graceful shutdown of the server is
+scheduled.  Subsequent instances of SIGINT lead to default behavior.
+
+.SH STDOUT
+
+The
+.I serve
+utility prints a message every time a new process is successfuly created for an
+accepted connection, precising the process ID of the created process as well as
+the remote address of the accepted connection.  Once the created process is
+confirmed to have terminated, a message is printed indicating both the process
+ID and exit status of the process.  All standard error output of all created
+processes shall be intercepted, line-buffered and printed to standard output
+with each line being prepended by the process ID of the created process.
+
+.SH STDERR
+
+The standard error is used for diagnostic messages that are proper to the
+server and not to its child processes.
+
+.SH "OUTPUT FILES"
+
+None.
+
+.SH "EXTENDED DESCRIPTION"
+
+Interception of child processes' standard error is done by calling the
+.I dup2()
+function on a pipe created with a call to the
+.I pipe()
+function, or any similar operation.  The
+.I serve
+utility monitors whether there is data to treat as if by calling the
+.I poll()
+function.  If several connections are accepted simultaneously, they are run
+concurrently (scheduling or parallelizing being delegated to the operating
+system).
+
+.P
+Possible causes for errors causing diagnostic messages include:
+.IP " *" 4
+a call to the
+.I poll()
+function failed for a reason other than interruption by a signal;
+.IP " *" 4
+accepting a connection failed for a reason other than the peer resetting the
+connection, interruption by a signal or maximum number of open file descriptors
+being reached;
+.IP " *" 4
+a child process could not be created and made to execute the specified command
+for any reason.
+
+.P
+If the
+.I REMOTE
+environment variable could not be set in a child process, a diagnostic message
+is printed, but the command is run regardless.
+
+.P
+Since the maximum number of open file descriptors by a single process is at
+least 20, 4 are always open (the standard streams and the listening socket) and
+it takes 2 descriptors per connection (the socket and the pipe for standard
+error) plus another one while a connection is being treated (the other end of
+the pipe which is closed immediately after), the
+.I serve
+utility is guaranteed to be portably able to handle at least 7 simultaneous
+connections.  The exact limit depends on the operating system.
+
+.P
+Termination of the session is left at the responsibility of the child processes
+and the peer.  The user should not use the
+.I serve
+utility to run applications that may not terminate.
+
+.P
+The application running in child processes should properly check all errors in
+its standard input and output as they directly map to connection errors.
+
+.P
+In some connection protocols, reading from a socket whose connection has been
+closed by the peer raises SIGPIPE whose default effect is terminating the
+process.  If this comes at risks such as leaving files in a corrupted state,
+the application running in child processes should catch or ignore SIGPIPE.
+
+.SH "EXIT STATUS"
+
+The
+.I serve
+utility exits with one of the following values:
+
+.IP 0 10
+A graceful shutdown was performed after receiving SIGINT once.
+.IP >0 10
+An error occurred.
