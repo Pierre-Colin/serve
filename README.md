@@ -4,6 +4,20 @@ serve
 The `serve` utility is a generic server for POSIX systems.  It can run almost
 any shell command and turn it into a server application.
 
+When running `serve`, you specify a command to run in the session.  Each
+incoming connection runs that command in a worker process.  Worker processes
+have the following extra features:
+* their standard input and output map to the connection socket;
+* their standard error buffers into lines, and `serve` prints it on its
+  standard output;
+* the shell variable `$REMOTE` expands to a string representation of the
+  incoming connection.
+
+You can use the file system to share state between sessions, although this is
+slow.  You should treat standard input and output as binary streams.  On POSIX
+systems, this is trivial since all streams are binary.  But this constraint
+gets in the way of porting `serve` to non-POSIX systems such as Windows.
+
 The `serve` utility should conform to POSIX 2017.
 
 Building
