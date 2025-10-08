@@ -75,14 +75,17 @@ for byte-stream sockets, corresponding to POSIX
 .IR SOCK_STREAM .
 
 .IP "           *" 14
-.I dgram
-for datagram sockets, corresponding to POSIX
-.IR SOCK_DGRAM .
-
-.IP "           *" 14
 .I seqpacket
 for sequenced-packet sockets, corresponding to POSIX
 .IR SOCK_SEQPACKET .
+
+.IP "" 10
+There is no value corresponding to POSIX
+.IR SOCK_DGRAM
+because these would be connectionless-mode sockets which cannot be used with
+the
+.I listen()
+function.
 
 .IP "\fB\-p\fP \fIprotocol\fP" 10
 Specify the protocol specification.  If absent, defaults to an OS-specified

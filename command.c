@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Pierre Colin
+ * Copyright (C) 2023, 2025 Pierre Colin
  * This file is part of the serve utility.
  * 
  * The serve utility is free software: you can redistribute it and/or modify it
@@ -92,8 +92,8 @@ __attribute__((nonnull (1)))
 static int gettype(const char * const type)
 {
 	/* s MUST be sorted lexicographically */
-	static const char *s[] = {"dgram", "seqpacket", "stream"};
-	static const int v[] = {SOCK_DGRAM, SOCK_SEQPACKET, SOCK_STREAM};
+	static const char *s[] = {"seqpacket", "stream"};
+	static const int v[] = {SOCK_SEQPACKET, SOCK_STREAM};
 	if (sizeof s / sizeof s[0] < sizeof v / sizeof v[0]) {
 		fprintf(stderr,
 			"Differing array sizes in function %s, in file %s\n",

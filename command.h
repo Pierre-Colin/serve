@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Pierre Colin
+ * Copyright (C) 2023, 2025 Pierre Colin
  * This file is part of the serve utility.
  * 
  * The serve utility is free software: you can redistribute it and/or modify it
