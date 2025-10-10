@@ -362,25 +362,12 @@ static void mklistener()
 #ifdef __GNUC__
 __attribute__((nonnull (2)))
 #endif
-static void setlocaletype(int type, const char * const restrict str)
-{
-	const char *env = getenv(str);
-	if (env && !setlocale(type, env)) {
-		fprintf(stderr, "Could not set %s to %s\n", str, env);
-		exit(EXIT_FAILURE);
-	}
-}
-
-#ifdef __GNUC__
-__attribute__((nonnull (2)))
-#endif
 void init(const int argc, char * const argv[])
 {
-	setlocaletype(LC_ALL, "LANG");
-	setlocaletype(LC_COLLATE, "LC_COLLATE");
-	setlocaletype(LC_CTYPE, "LC_CTYPE");
-	setlocaletype(LC_NUMERIC, "LC_NUMERIC");
-	setlocaletype(LC_ALL, "LC_ALL");
+	if (!setlocale(LC_ALL, "")) {
+		fputs("Could not set the global locale.\n", stderr);
+		exit(EXIT_FAILURE);
+	}
 	argparse(argc, argv);
 	mklistener();
 }
