@@ -60,7 +60,7 @@ static void usage(const char * const restrict cmd)
 }
 
 #ifdef __GNUC__
-__attribute__((nonnull (1, 2), const))
+__attribute__((nonnull (1, 2), pure))
 #endif
 static int compare(const void *a, const void *b)
 {
