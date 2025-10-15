@@ -34,6 +34,11 @@
 
 #define DEFAULT_PORT 4869
 
+struct af_lookup {
+	const char *str;
+	sa_family_t af;
+};
+
 _Bool mknonblocking(int fildes);
 
 static char *command;
@@ -68,22 +73,41 @@ static int compare(const void *a, const void *b)
 }
 
 #ifdef __GNUC__
-__attribute__((nonnull (1)))
+__attribute__((nonnull (1, 2)))
 #endif
-static sa_family_t getdomain(const char * const dom)
+static sa_family_t getdomain(const char * restrict str,
+                             const char ** const rem)
 {
-	/* s MUST be sorted lexicographically */
-	static const char *s[] = {"inet", "inet6", "unix"};
-	static const sa_family_t v[] = {AF_INET, AF_INET6, AF_UNIX};
-	if (sizeof s / sizeof s[0] < sizeof v / sizeof v[0]) {
-		fprintf(stderr,
-			"Differing array sizes in function %s, in file %s\n",
-			__func__, __FILE__);
-		abort();
+	/* Strings must be sorted lexicographically */
+	static const struct af_lookup lookup[] = {
+		{ "inet", AF_INET },
+		{ "inet6", AF_INET6 },
+		{ "unix", AF_UNIX }
+	};
+	static const size_t num_af = sizeof lookup / sizeof lookup[0];
+	const struct af_lookup *beg = lookup, *end = lookup + num_af - 1;
+	size_t offset = 0;
+	/* Invariant: for all entries x between beg and end, x.str matches
+	   the initial value of str up to the offset */
+	while (*str && *str != ' ' || beg < end) {
+		const char c = *str == ' ' ? 0 : *str;
+		if (c < beg->str[offset] || end->str[offset] < c)
+			return AF_UNSPEC;
+		if (beg->str[offset] < end->str[offset]) {
+			/* Should be done by binary search, but lookup is too
+			   small to properly test it */
+			while (beg < end && beg->str[offset] < c) ++beg;
+			while (beg < end && end->str[offset] > c) --end;
+		} else if (beg->str[offset] == c) {
+			++offset;
+			++str;
+		}
 	}
-	const char **x = bsearch(&dom, s, sizeof s / sizeof s[0],
-		sizeof (const char *), compare);
-	return x ? v[x - s] : AF_UNSPEC;
+	if (!beg->str[offset]) {
+		*rem = *str == ' ' ? ++str : str;
+		return beg->af;
+	}
+	return AF_UNSPEC;
 }
 
 #ifdef __GNUC__
@@ -232,26 +256,11 @@ static int setaddressunix(const char * const restrict addrstr)
 	return 1;
 }
 
-static int setaddress(const char * restrict addr)
+static int setaddress(const char *addr)
 {
 	free(address);
 	address = NULL;
-	sa_family_t af;
-	const char *s = strchr(addr, ' ');
-	if (s) {
-		char *domstr = malloc(s - addr + 1);
-		if (!domstr)
-			return -1;
-		memcpy(domstr, addr, s - addr);
-		domstr[s - addr] = 0;
-		af = getdomain(domstr);
-		free(domstr);
-		addr = s + 1;
-	} else {
-		af = getdomain(addr);
-		addr = NULL;
-	}
-	switch (af) {
+	switch (getdomain(addr, &addr)) {
 	case AF_INET:
 		return setaddressinet(addr);
 	case AF_INET6:

@@ -59,8 +59,6 @@ it unsuitable to test nontrivial applications.
 Things left to do
 -----------------
 
-* Implement socket types.
-
-* Implement protocol specifications.
+* Implement other address families that Linux supports.
 
 * Add a way to limit incoming connections below OS limit.
