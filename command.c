@@ -292,6 +292,7 @@ static bool processopt(int c)
 				optarg);
 			return true;
 		}
+		type = c;
 		return false;
 	case ':':
 		fprintf(stderr, "Option -%c requires an operand\n",
