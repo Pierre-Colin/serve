@@ -59,6 +59,4 @@ it unsuitable to test nontrivial applications.
 Things left to do
 -----------------
 
-* Implement other address families that Linux supports.
-
 * Add a way to limit incoming connections below OS limit.

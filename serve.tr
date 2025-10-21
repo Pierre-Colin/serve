@@ -62,7 +62,17 @@ which to accept connections, followed by a token giving the port number;
 .IP "           *" 14
 .I unix
 for Unix socket domain, the next token being the path to the socket to be
-created, the maximum path length supported depending on the operating system.
+created, the maximum path length supported depending on the operating system;
+
+.IP "           *" 14
+.I vsock
+for VSOCK, the next token being a port number, followed by a token giving the
+context identifier (Linux only);
+
+.IP "           *" 14
+.I x25
+for X.25, the next token being a sequence of up to 15 digit characters (Linux
+only).
 
 .IP "\fB\-t\fP \fItype\fP" 10
 Specify the socket type.  If absent, the value

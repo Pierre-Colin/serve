@@ -28,6 +28,11 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#if __linux__
+#include <linux/vm_sockets.h>
+#include <linux/x25.h>
+#endif
+
 #define BUF_LEN 512
 
 #ifdef __GNUC__
@@ -79,6 +84,31 @@ static char *serializeunix(const struct sockaddr_un * const restrict address)
 	return path2 ? path2 : path;
 }
 
+#if __linux__
+#ifdef __GNUC__
+__attribute__((nonnull (1)))
+#endif
+static char *serializevsock(const struct sockaddr_vm * const restrict a)
+{
+	const int n = snprintf(NULL, 0, "%u %u", a->svm_port, a->svm_cid) + 1;
+	if (n < 0)
+		return NULL;
+	char * const s = malloc(n);
+	if (!s)
+		return NULL;
+	sprintf(s, "%u %u", a->svm_port, a->svm_cid);
+	return s;
+}
+
+#ifdef __GNUC__
+__attribute__((nonnull (1)))
+#endif
+static char *serializex25(const struct sockaddr_x25 * const restrict address)
+{
+	return strdup(address->sx25_addr.x25_addr);
+}
+#endif
+
 #ifdef __GNUC__
 __attribute__((nonnull (2)))
 #endif
@@ -87,6 +117,10 @@ int acceptremote(const int socket, char ** const restrict address)
 	assert(sizeof (struct sockaddr_in) <= BUF_LEN);
 	assert(sizeof (struct sockaddr_in6) <= BUF_LEN);
 	assert(sizeof (struct sockaddr_un) <= BUF_LEN);
+	#if __linux__
+	assert(sizeof (struct sockaddr_vm) <= BUF_LEN);
+	assert(sizeof (struct sockaddr_x25) <= BUF_LEN);
+	#endif
 	char buf[BUF_LEN];
 	socklen_t length = BUF_LEN;
 	const int fildes = accept(socket, (struct sockaddr *) buf, &length);
@@ -105,6 +139,16 @@ int acceptremote(const int socket, char ** const restrict address)
 		if (!(*address = serializeunix((struct sockaddr_un *) buf)))
 			goto fail;
 		return fildes;
+	#if __linux__
+	case AF_VSOCK:
+		if (!(*address = serializevsock((struct sockaddr_vm *) buf)))
+			goto fail;
+		return fildes;
+	case AF_X25:
+		if (!(*address = serializex25((struct sockaddr_x25 *) buf)))
+			goto fail;
+		return fildes;
+	#endif
 	default:
 		close(fildes);
 		errno = ENOTSUP;

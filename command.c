@@ -30,6 +30,11 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#if __linux__
+#include <linux/vm_sockets.h>
+#include <linux/x25.h>
+#endif
+
 #include "command.h"
 
 #define DEFAULT_PORT 4869
@@ -83,6 +88,10 @@ static sa_family_t getdomain(const char * restrict str,
 		{ "inet", AF_INET },
 		{ "inet6", AF_INET6 },
 		{ "unix", AF_UNIX }
+		#if __linux__
+		, { "vsock", AF_VSOCK },
+		{"x25", AF_X25 }
+		#endif
 	};
 	static const size_t num_af = sizeof lookup / sizeof lookup[0];
 	const struct af_lookup *beg = lookup, *end = lookup + num_af - 1;
@@ -256,6 +265,75 @@ static int setaddressunix(const char * const restrict addrstr)
 	return 1;
 }
 
+#if __linux__
+static int setaddressvsock(const char * const restrict str)
+{
+	struct sockaddr_vm * const addr = malloc(sizeof *addr);
+	if (!addr)
+		return -1;
+	addr->svm_family = AF_VSOCK;
+	addr->svm_reserved1 = 0;
+	errno = 0;
+	switch (sscanf(str, " %u %u", &addr->svm_port, &addr->svm_cid)) {
+	case EOF:
+		if (errno) {
+			perror("Could not parse VSOCK address");
+			free(addr);
+			return -1;
+		}
+		free(addr);
+		fputs("VSOCK address string has no data.\n", stderr);
+		return 0;
+	case 0:
+		free(addr);
+		fputs("Could not parse VSOCK address port number.\n", stderr);
+		return 0;
+	case 1:
+		free(addr);
+		fputs("Could not parse VSOCK context identifier.\n", stderr);
+		return 0;
+	case 2:
+		memset(addr->svm_zero, 0, sizeof addr->svm_zero);
+		address = (struct sockaddr *) addr;
+		address_len = sizeof (struct sockaddr_vm);
+		return 1;
+	default:
+		free(addr);
+		fputs("Invalid sscanf return value.\n", stderr);
+		abort();
+	}
+}
+
+static int setaddressx25(const char * const restrict str)
+{
+	/* Validate the address */
+	size_t sz;
+	for (sz = 0; str[sz]; ++sz) {
+		if (sz > 15) {
+			fprintf(stderr,
+			        "X25 address '%s' is too long.\n",
+			        str);
+			return 0;
+		} else if (str[sz] < '0' || str[sz] > '9') {
+			fprintf(stderr,
+			        "X25 address '%s' has forbidden characters.\n",
+			        str);
+			return 0;
+		}
+	}
+
+	/* Allocate and copy */
+	struct sockaddr_x25 * const addr = malloc(sizeof addr);
+	if (!addr)
+		return -1;
+	addr->sx25_family = AF_X25;
+	memcpy(addr->sx25_addr.x25_addr, str, ++sz);
+	address = (struct sockaddr *) addr;
+	address_len = sizeof (struct sockaddr_x25);
+	return 1;
+}
+#endif
+
 static int setaddress(const char *addr)
 {
 	free(address);
@@ -267,6 +345,12 @@ static int setaddress(const char *addr)
 		return setaddressinet6(addr);
 	case AF_UNIX:
 		return setaddressunix(addr);
+	#if __linux__
+	case AF_VSOCK:
+		return setaddressvsock(addr);
+	case AF_X25:
+		return setaddressx25(addr);
+	#endif
 	default:
 		errno = ENOTSUP;
 		return -1;
