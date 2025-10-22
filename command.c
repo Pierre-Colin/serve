@@ -49,6 +49,7 @@ _Bool mknonblocking(int fildes);
 static char *command;
 static struct sockaddr *address;
 static socklen_t address_len;
+static int backlog = SOMAXCONN;
 static int type = SOCK_STREAM, protocol;
 static int listener = -1;
 
@@ -65,7 +66,8 @@ __attribute__((nonnull (1)))
 static void usage(const char * const restrict cmd)
 {
 	fprintf(stderr,
-		"usage: %s [-a address] [-t type] [-p protocol] command\n",
+		"usage: %s [-a address] [-b backlog] [-t type] [-p protocol] "
+	        "command\n",
 		cmd);
 }
 
@@ -360,12 +362,24 @@ static int setaddress(const char *addr)
 static bool processopt(int c)
 {
 	switch (c) {
+		char *end;
+		long bl;
 	case 'a':
 		if ((c = setaddress(optarg)) < 0) {
 			perror("Could not set listening address");
 			exit(EXIT_FAILURE);
 		}
 		return c == 0;
+	case 'b':
+		bl = strtol(optarg, &end, 10);
+		if (*end) {
+			fprintf(stderr,
+			        "Option -b argument '%s' is not an integer.\n",
+			        optarg);
+			return true;
+		}
+		backlog = bl < 0 ? 0 : bl > SOMAXCONN ? SOMAXCONN : bl;
+		return false;
 	case 'p':
 		fputs("Protocol specification unimplemented; using stream\n",
 		      stderr);
@@ -402,7 +416,7 @@ static void argparse(const int argc, char * const argv[])
 	atexit(cleanup);
 	int c;
 	bool error = false;
-	while ((c = getopt(argc, argv, ":a:p:t:")) != -1)
+	while ((c = getopt(argc, argv, ":a:b:p:t:")) != -1)
 		error |= processopt(c);
 	if (!address && setaddressinet(NULL) < 0) {
 		perror("Could not set default listening address");
@@ -445,7 +459,7 @@ static void mklistener()
 		perror("Could not get listener socket descriptor flags");
 	else if (fcntl(listener, F_SETFD, f | FD_CLOEXEC) < 0)
 		perror("Could not set listener socket descriptor flags");
-	if (listen(listener, SOMAXCONN) < 0) {
+	if (listen(listener, backlog) < 0) {
 		perror("Could not mark listener as accepting connections");
 		exit(EXIT_FAILURE);
 	}

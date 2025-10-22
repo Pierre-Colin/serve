@@ -4,7 +4,8 @@ serve
 \(em open a server executing another command as a session
 .SH SYNOPSIS
 .nf
-serve \fB[\fR-a address\fB]\fR \fB[\fR-t type\fB]\fR \fB[\fR-p protocol\fB]\fR \fIcommand\fR
+serve \fB[\fR-a address\fB]\fR \fB[\fR-b backlog\fB]\fR \fB[\fR-t type\fB]\fR \
+\fB[\fR-p protocol\fB]\fR \fIcommand\fR
 .fi
 .SH DESCRIPTION
 The
@@ -14,6 +15,8 @@ utility opens a socket as if by a call to the
 function with arguments derived from the values of the
 .B \-a
 .IR address ,
+.B \-b
+.IR backlog ,
 .B \-t
 .I type
 and
@@ -73,6 +76,16 @@ context identifier (Linux only);
 .I x25
 for X.25, the next token being a sequence of up to 15 digit characters (Linux
 only).
+
+.IP "\fB\-b\fP \fIbacklog\fP" 10
+Specify an integer hint for the size of the listen queue, that is, connections
+the server has not yet accepted.  If absent or greater than the maximum queue
+length as given by the
+.I SOMAXCONN
+POSIX macro, the maximum is silently taken.  If the option argument
+.I backlog
+provided is negative, the listen queue is set to an OS-dependent minimum size.
+Since this is a mere hint, the actual size of the listen queue may differ.
 
 .IP "\fB\-t\fP \fItype\fP" 10
 Specify the socket type.  If absent, the value
