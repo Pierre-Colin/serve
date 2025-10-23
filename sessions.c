@@ -128,19 +128,24 @@ cleanup_pipe:
 	return true;
 }
 
-static bool needrmproc(const size_t p)
+static bool tryrmproc(const size_t p)
 {
-	int x;
-	const pid_t pid = waitpid(processes[p].pid, &x, WNOHANG);
+	int status;
+	const pid_t pid = waitpid(processes[p].pid, &status, WNOHANG);
 	if (pid <= 0)
 		return false;
+	/* TODO: try one last time to get input before flushing */
 	if (processes[p].nebuf > 0) {
 		fprintf(stderr, "%ju: %s\n", (uintmax_t) processes[p].pid,
-			processes[p].ebuf);
+		        processes[p].ebuf);
 		processes[p].ebuf[0] = 0;
 		processes[p].nebuf = 0;
 	}
-	printf("Process %ju exited (%d)\n", (uintmax_t) pid, x);
+	close(fds[p + 1].fd);
+	free(processes[p].ebuf);
+	processes[p] = processes[nproc - 1];
+	fds[p + 1] = fds[nproc--];
+	printf("Process %ju exited (%d)\n", (uintmax_t) pid, status);
 	return true;
 }
 
@@ -191,14 +196,6 @@ static int passprocio(const size_t p)
 	return 0;
 }
 
-static void rmproc(const size_t p)
-{
-	close(fds[p + 1].fd);
-	free(processes[p].ebuf);
-	processes[p] = processes[nproc - 1];
-	fds[p + 1] = fds[nproc--];
-}
-
 #ifdef __GNUC__
 __attribute__((const))
 #endif
@@ -218,15 +215,13 @@ int resume()
 		atexit(cleanup);
 		setup = true;
 	}
+	for (size_t i = 0; i < nproc; /* noop */) {
+		if (!tryrmproc(i))
+			i++;
+	}
 	const int n = poll(fds, nproc + 1, -1);
 	if (n < 0)
 		return -(errno != EINTR);
-	for (size_t i = 0; i < nproc; /* noop */) {
-		if (needrmproc(i))
-			rmproc(i);
-		else
-			i++;
-	}
 	int iopassed = 0;
 	for (size_t i = 0; i < nproc; i++) {
 		const int r = passprocio(i);
