@@ -17,6 +17,7 @@
  */
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <poll.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -40,6 +41,7 @@ typedef struct {
 static ProcessData *processes;
 static struct pollfd *fds;
 static size_t nproc, cproc = 0;
+static int mproc = INT_MAX;
 
 static void cleanupprocesses()
 {
@@ -182,26 +184,34 @@ static bool passprocerror(const size_t p)
 	return false;
 }
 
-static int passprocio(const size_t p)
-{
-	if (fds[p + 1].revents & POLLERR) {
-		fprintf(stderr, "Process %ju has a pipe error\n",
-			(uintmax_t) processes[p].pid);
-		return -1;
-	}
-
-	if (fds[p + 1].revents & POLLIN)
-		return passprocerror(p) ? -1 : 1;
-
-	return 0;
-}
-
 #ifdef __GNUC__
 __attribute__((const))
 #endif
 static int propagateacceptfailure(const int error)
 {
 	return error != ECONNABORTED && error != EINTR && error != EMFILE;
+}
+
+static bool passio(const size_t proc)
+{
+	if (fds[proc + 1].revents & POLLERR) {
+		fprintf(stderr, "Process %ju has a pipe error\n",
+			(uintmax_t) processes[proc].pid);
+		return false;
+	}
+
+	if (fds[proc + 1].revents & POLLIN) {
+		if (passprocerror(proc)) {
+			fprintf(stderr,
+			        "Could not pass output for process %ju: %s\n",
+				(uintmax_t) processes[proc].pid,
+			        strerror(errno));
+			return false;
+		}
+		return true;
+	}
+
+	return false;
 }
 
 int resume()
@@ -215,40 +225,49 @@ int resume()
 		atexit(cleanup);
 		setup = true;
 	}
+
+	/* Remove processes that have halted */
 	for (size_t i = 0; i < nproc; /* noop */) {
 		if (!tryrmproc(i))
 			i++;
 	}
-	const int n = poll(fds, nproc + 1, -1);
-	if (n < 0)
-		return -(errno != EINTR);
-	int iopassed = 0;
-	for (size_t i = 0; i < nproc; i++) {
-		const int r = passprocio(i);
-		if (r < 0) {
-			fprintf(stderr,
-				"Could not forward I/O for process %ju: %s\n",
-				(uintmax_t) processes[i].pid, strerror(errno));
-			continue;
+
+	/* Fetch number of events and accept incoming connection if possible */
+	int nevents, sockerr = 0;
+	bool action = false;
+	if (nproc < mproc) {
+		if ((nevents = poll(fds, nproc + 1, -1)) < 0)
+			return -(errno != EINTR);
+		if (fds[0].revents & POLLIN) {
+			char *a;
+			const int sock = acceptremote(fds[0].fd, &a);
+			if (sock >= 0) {
+				if (addproc(sock, a)) {
+					const int err = errno;
+					free(a);
+					close(sock);
+					errno = err;
+					return -1;
+				}
+				free(a);
+				close(sock);
+				nevents--;
+				action = true;
+			} else
+				sockerr = errno;
 		}
-		if ((iopassed += r) == n)
-			return iopassed;
+	} else if ((nevents = poll(fds + 1, nproc, 0)) < 0)
+		return -1;
+
+	/* Forward error outputs */
+	if (nevents) {
+		for (size_t i = 0; i < nproc; i++)
+			action |= passio(i);
 	}
-	const bool incoming = fds[0].revents & POLLIN;
-	if (incoming) {
-		char *a;
-		const int s = acceptremote(fds[0].fd, &a);
-		if (s < 0)
-			return propagateacceptfailure(errno) ? -1 : iopassed;
-		if (addproc(s, a)) {
-			const int e = errno;
-			free(a);
-			close(s);
-			errno = e;
-			return -1;
-		}
-		free(a);
-		close(s);
+
+	if (sockerr) {
+		errno = sockerr;
+		return propagateacceptfailure(sockerr) ? -1 : 1;
 	}
-	return iopassed + incoming;
+	return action;
 }
