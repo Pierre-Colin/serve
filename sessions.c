@@ -31,6 +31,7 @@
 
 #include "command.h"
 #include "remote.h"
+#include "sessions.h"
 
 typedef struct {
 	pid_t pid;
@@ -214,12 +215,12 @@ static bool passio(const size_t proc)
 	return false;
 }
 
-int resume()
+enum status resume()
 {
 	static bool setup = false;
 	if (!setup) {
 		if (!(fds = malloc(sizeof (struct pollfd))))
-			return -1;
+			return S_ERROR;
 		fds->fd = getlistener();
 		fds->events = POLLIN;
 		atexit(cleanup);
@@ -237,7 +238,7 @@ int resume()
 	bool action = false;
 	if (nproc < mproc) {
 		if ((nevents = poll(fds, nproc + 1, -1)) < 0)
-			return -(errno != EINTR);
+			return errno == EINTR ? S_NONE : S_ERROR;
 		if (fds[0].revents & POLLIN) {
 			char *a;
 			const int sock = acceptremote(fds[0].fd, &a);
@@ -257,7 +258,7 @@ int resume()
 				sockerr = errno;
 		}
 	} else if ((nevents = poll(fds + 1, nproc, 0)) < 0)
-		return -1;
+		return S_ERROR;
 
 	/* Forward error outputs */
 	if (nevents) {
@@ -267,7 +268,7 @@ int resume()
 
 	if (sockerr) {
 		errno = sockerr;
-		return propagateacceptfailure(sockerr) ? -1 : 1;
+		return propagateacceptfailure(sockerr) ? S_ERROR : S_SOME;
 	}
-	return action;
+	return action ? S_SOME : S_NONE;
 }

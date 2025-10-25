@@ -21,8 +21,7 @@
 #include <stdlib.h>
 
 #include "command.h"
-
-int resume(void);
+#include "sessions.h"
 
 static volatile sig_atomic_t done;
 
@@ -46,11 +45,13 @@ int main(int argc, char *argv[])
 	init(argc, argv);
 	confsig();
 	while (!done) {
-		const int r = resume();
-		if (r < 0)
+		switch (resume()) {
+		case S_ERROR:
 			perror("Internal error while running the executor");
-		if (r <= 0)
+			/* FALLTHROUGH */
+		case S_NONE:
 			sched_yield();
+		}
 	}
 	return EXIT_SUCCESS;
 }

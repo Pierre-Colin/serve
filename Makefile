@@ -7,8 +7,8 @@ serve: $(OBJ)
 
 command.o: command.c command.h
 remote.o: remote.c
-serve.o: serve.c command.h
-sessions.o: sessions.c command.h remote.h
+serve.o: serve.c command.h sessions.h
+sessions.o: sessions.c command.h remote.h sessions.h
 
 clean:
 	rm -f serve $(OBJ)
