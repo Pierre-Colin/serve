@@ -44,6 +44,14 @@ static struct pollfd *fds;
 static size_t nproc, cproc = 0;
 static int mproc = INT_MAX;
 
+void initmaxproc(int val)
+{
+	const long sysmax = sysconf(_SC_OPEN_MAX) - 2;
+	if (sysmax > 0 && sysmax < val)
+		val = sysmax;
+	mproc = val;
+}
+
 static void cleanupprocesses()
 {
 	for (size_t i = 0; i < nproc; i++) {
@@ -257,7 +265,7 @@ enum status resume()
 			} else
 				sockerr = errno;
 		}
-	} else if ((nevents = poll(fds + 1, nproc, 0)) < 0)
+	} else if ((nevents = poll(fds + 1, nproc, 50)) < 0)
 		return S_ERROR;
 
 	/* Forward error outputs */

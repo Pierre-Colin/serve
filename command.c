@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <locale.h>
 #include <netinet/in.h>
 #include <stdbool.h>
@@ -36,6 +37,7 @@
 #endif
 
 #include "command.h"
+#include "sessions.h"
 
 #define DEFAULT_PORT 4869
 
@@ -66,8 +68,8 @@ __attribute__((nonnull (1)))
 static void usage(const char * const restrict cmd)
 {
 	fprintf(stderr,
-		"usage: %s [-a address] [-b backlog] [-t type] [-p protocol] "
-	        "command\n",
+		"usage: %s [-a address] [-b backlog] [-c connections] "
+	        "[-t type] [-p protocol] command\n",
 		cmd);
 }
 
@@ -363,7 +365,7 @@ static bool processopt(int c)
 {
 	switch (c) {
 		char *end;
-		long bl;
+		long val;
 	case 'a':
 		if ((c = setaddress(optarg)) < 0) {
 			perror("Could not set listening address");
@@ -371,15 +373,27 @@ static bool processopt(int c)
 		}
 		return c == 0;
 	case 'b':
-		bl = strtol(optarg, &end, 10);
+		val = strtol(optarg, &end, 10);
 		if (*end) {
 			fprintf(stderr,
 			        "Option -b argument '%s' is not an integer.\n",
 			        optarg);
 			return true;
 		}
-		backlog = bl < 0 ? 0 : bl > SOMAXCONN ? SOMAXCONN : bl;
+		backlog = val < 0 ? 0 : val > SOMAXCONN ? SOMAXCONN : val;
 		return false;
+	case 'c':
+		val = strtol(optarg, &end, 10);
+		if (*end) {
+			fprintf(stderr,
+			        "Option -c argument '%s' is not an integer.\n",
+			        optarg);
+			return true;
+		} else if (val > INT_MAX)
+			val = INT_MAX;
+		else if (val < 0)
+			val = 0;
+		initmaxproc(val);
 	case 'p':
 		fputs("Protocol specification unimplemented; using stream\n",
 		      stderr);
@@ -416,7 +430,7 @@ static void argparse(const int argc, char * const argv[])
 	atexit(cleanup);
 	int c;
 	bool error = false;
-	while ((c = getopt(argc, argv, ":a:b:p:t:")) != -1)
+	while ((c = getopt(argc, argv, ":a:b:c:p:t:")) != -1)
 		error |= processopt(c);
 	if (!address && setaddressinet(NULL) < 0) {
 		perror("Could not set default listening address");

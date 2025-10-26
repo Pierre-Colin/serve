@@ -5,7 +5,7 @@ OBJ=command.o remote.o serve.o sessions.o
 serve: $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ)
 
-command.o: command.c command.h
+command.o: command.c command.h sessions.h
 remote.o: remote.c
 serve.o: serve.c command.h sessions.h
 sessions.o: sessions.c command.h remote.h sessions.h

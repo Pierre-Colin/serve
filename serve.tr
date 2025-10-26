@@ -4,8 +4,9 @@ serve
 \(em open a server executing another command as a session
 .SH SYNOPSIS
 .nf
-serve \fB[\fR-a address\fB]\fR \fB[\fR-b backlog\fB]\fR \fB[\fR-t type\fB]\fR \
-\fB[\fR-p protocol\fB]\fR \fIcommand\fR
+serve \fB[\fR-a address\fB]\fR \fB[\fR-b backlog\fB]\fR \
+\fB[\fR-c connections\fB]\fR \fB[\fR-t type\fB]\fR \fB[\fR-p protocol\fB]\fR \
+\fIcommand\fR
 .fi
 .SH DESCRIPTION
 The
@@ -17,6 +18,8 @@ function with arguments derived from the values of the
 .IR address ,
 .B \-b
 .IR backlog ,
+.B \-c
+.IR connections ,
 .B \-t
 .I type
 and
@@ -86,6 +89,14 @@ POSIX macro, the maximum is silently taken.  If the option argument
 .I backlog
 provided is negative, the listen queue is set to an OS-dependent minimum size.
 Since this is a mere hint, the actual size of the listen queue may differ.
+
+.IP "\fB\-c\fP \fIconnections\fP" 10
+Specify an upper bound for the number of concurrent, already accepted
+connections.  This is separate from the listen queue.  Since each connection is
+handled in a separate child process, this reduces system load.  The effective
+limit may be lower depending on OS properties.  If there are more connections
+than can be accepted, the remaining ones are kept in the listen queue and will
+be accepted once child processes terminate.
 
 .IP "\fB\-t\fP \fItype\fP" 10
 Specify the socket type.  If absent, the value
@@ -233,6 +244,13 @@ the pipe which is closed immediately after), the
 .I serve
 utility is guaranteed to be portably able to handle at least 7 simultaneous
 connections.  The exact limit depends on the operating system.
+
+.P
+When the limit of child processes is reached, the
+.I serve
+utility enters a loop in which it checks for child process termination and then
+checks for error output to pass to its standard output.  The first check does
+not block, and the second check blocks for at most 50 milliseconds.
 
 .P
 Termination of the session is left at the responsibility of the child processes

@@ -55,8 +55,3 @@ telnet -4 127.0.0.1 5000
 
 Keep in mind `telnet` adds carriage returns before all line feeds.  This makes
 it unsuitable to test nontrivial applications.
-
-Things left to do
------------------
-
-* Add a way to limit incoming connections below OS limit.
