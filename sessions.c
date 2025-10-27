@@ -266,7 +266,7 @@ enum status resume()
 				sockerr = errno;
 		}
 	} else if ((nevents = poll(fds + 1, nproc, 50)) < 0)
-		return S_ERROR;
+		return errno == EINTR ? S_NONE : S_ERROR;
 
 	/* Forward error outputs */
 	if (nevents) {
