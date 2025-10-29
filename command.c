@@ -18,7 +18,6 @@
 #include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <limits.h>
 #include <locale.h>
 #include <netinet/in.h>
@@ -37,6 +36,7 @@
 #endif
 
 #include "command.h"
+#include "qualfd.h"
 #include "sessions.h"
 
 #define DEFAULT_PORT 4869
@@ -45,8 +45,6 @@ struct af_lookup {
 	const char *str;
 	sa_family_t af;
 };
-
-_Bool mknonblocking(int fildes);
 
 static char *command;
 static struct sockaddr *address;
@@ -460,7 +458,7 @@ void cmdexec()
 static void mklistener()
 {
 	assert(address != NULL);
-	if ((listener = socket(address->sa_family, type, protocol)) < 0) {
+	if ((listener = qualsocket(address->sa_family, type, protocol)) < 0) {
 		perror("Could not create listener socket");
 		exit(EXIT_FAILURE);
 	}
@@ -468,17 +466,10 @@ static void mklistener()
 		perror("Could not assign address to listener socket");
 		exit(EXIT_FAILURE);
 	}
-	const int f = fcntl(listener, F_GETFD);
-	if (f < 0)
-		perror("Could not get listener socket descriptor flags");
-	else if (fcntl(listener, F_SETFD, f | FD_CLOEXEC) < 0)
-		perror("Could not set listener socket descriptor flags");
 	if (listen(listener, backlog) < 0) {
 		perror("Could not mark listener as accepting connections");
 		exit(EXIT_FAILURE);
 	}
-	if (!mknonblocking(listener))
-		perror("Could not make listener socket nonblocking");
 }
 
 #ifdef __GNUC__

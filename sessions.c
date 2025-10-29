@@ -16,7 +16,6 @@
  * the serve utility.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <errno.h>
-#include <fcntl.h>
 #include <limits.h>
 #include <poll.h>
 #include <signal.h>
@@ -30,6 +29,7 @@
 #include <unistd.h>
 
 #include "command.h"
+#include "qualfd.h"
 #include "remote.h"
 #include "sessions.h"
 
@@ -67,12 +67,6 @@ static void cleanup(void)
 	free(fds);
 }
 
-bool mknonblocking(const int fildes)
-{
-	const int flags = fcntl(fildes, F_GETFL);
-	return !(flags < 0 || fcntl(fildes, F_SETFL, flags | O_NONBLOCK) < 0);
-}
-
 static bool allocproc()
 {
 	if (nproc < cproc)
@@ -103,9 +97,9 @@ static bool allocproc()
 static bool addproc(const int sock, const char * const restrict remote)
 {
 	int fd[2];
-	if (pipe(fd) < 0)
+	if (nbpipe(fd) < 0)
 		return true;
-	if (!mknonblocking(fd[1]) || allocproc())
+	if (allocproc())
 		goto cleanup_pipe;
 	if ((processes[nproc].pid = fork()) < 0)
 		goto cleanup_pipe;
