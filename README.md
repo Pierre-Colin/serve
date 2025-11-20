@@ -25,16 +25,13 @@ Building
 
 Building `serve` is as easy as running `make`.
 
+For more advanced builds, consult the manual.  You can do so with the following
+commandsd.  They require [GNU Texinfo](https://www.gnu.org/software/texinfo/).
 
-You can change the `CFLAGS` macro in the `Makefile` to adapt your build to your
-C compiler.  The default should work on any implementation of the POSIX `c99`
-utility.  On GCC, good options to add are:
-* `-pedantic -Wall -Wextra -fanalyzer` for diagnostics;
-* `-g -Og` for debugging;
-* `-O3 -flto` for optimizations.
-
-Don’t remove the `-D_POSIX_C_SOURCE=200809L` option: POSIX conformance needs
-it.
+```bash
+texi2any -D "VERSION 0.1" -D "UPDATED 2025-11-20" manual/serve.texi
+info serve.info
+```
 
 Usage
 -----

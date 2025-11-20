@@ -1,0 +1,57 @@
+Building @command{serve} is easy and only requires a conforming POSIX
+environment including the @command{make} and @command{c99} utilities.
+@url{https://www.gnu.org/software/make/,,GNU Make} along with
+@url{https://gcc.gnu.org/,,GCC} comes closest to what was used to test
+@command{serve}.
+
+The easiest way to build @command{serve} is to type the following command from
+the root directory of the @command{serve} repository.
+
+@example
+make
+@end example
+
+On implementations of @command{make} that support is, the @code{-j} option can
+be used to parallelize the process and make it faster.  Four jobs should be
+plenty enough.
+
+@example
+make -j4
+@end example
+
+If you want a more advanced build, you will have to edit the line in the
+@code{Makefile} that sets the @code{CFLAGS} macro.  You should not remove the
+@code{-D_POSIX_C_SOURCE=200809L} option present by default except to replace it
+with @code{-D_POSIX_C_SOURCE=202405L} if your C library supports POSIX.1-2024
+(as of writing this, such support in the GNU C library is still incomplete).
+
+Adding @url{https://www.gnu.org/software/automake/,,GNU Automake} to mitigate
+the need for this step is under consideration, but don't expect it too soon.
+
+If your C compiler is @url{https://gcc.gnu.org/,,GCC}, the following options
+may come in handy.
+
+@multitable @columnfractions .2 .3 .5
+@headitem Option @tab Purpose @tab Description
+@item @code{-O3} @tab Performance @tab Enables more advanced optimizations
+@item @code{-march=native}
+	@tab Performance
+	@tab Optimizes for the current computer, precludes the build from
+	running on a different processor
+@item @code{-flto}
+	@tab Performance
+	@tab Optimize at link time (slows down building considerably)
+@item @code{-g} @tab Debugging @tab Generates debugging symbols
+@item @code{-Og}
+	@tab Debugging
+	@tab Enables only optimizations that don't interfere with debugging
+@item @code{-pedantic} @tab Development @tab Flags nonstandard C constructs
+@item @code{-Wall} @tab Development @tab Enables most warnings
+@item @code{-Wextra}
+	@tab Development
+	@tab Enables even more warnings (some of which are only recommended
+	while looking for bugs)
+@item @code{-fanalyzer}
+	@tab Development
+	@tab Enables the static analyzer (slows down building considerably)
+@end multitable

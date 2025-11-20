@@ -1,0 +1,25 @@
+The @command{serve} utility is a generic server, meaning that it can act like a
+network server for almost any purpose.  It does so thanks to the highly
+flexible POSIX file descriptors.
+
+For example, you can turn the @command{cat} command into a ``parrot server'' by
+simply running the following command.
+
+@example
+serve -a "inet 0.0.0.0 12345" cat
+@end example
+
+It will then open an IPv4 server on port 12345 that mirrors all incoming bytes
+back to their sender.
+
+Instead of just a command like @command{cat}, you can pass an entire POSIX
+shell prompt which may include setting environment variables, running an entire
+shell script rather than one utility and passing it arguments, though you will
+need to use quote marks since that introduces spaces.
+
+@example
+serve -a "inet 0.0.0.0 12345" "ANSWER=42 ./session.sh -f config.ini"
+@end example
+
+The main benefit of @command{serve} is that it is trivial to deploy it with
+applications that were tested with a basic standard input/output interface.
