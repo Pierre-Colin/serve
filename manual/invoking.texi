@@ -1,0 +1,38 @@
+The @command{serve} utility conforms to the
+@url{https://pubs.opengroup.org/onlinepubs/9799919799.2024edition/basedefs/V1_chap12.html,,Utility
+Syntax Guidelines} from POSIX.  In particular, any invocation of
+@command{serve} must have the form:
+
+@example
+serve [options] command
+@end example
+
+where all options necessarily come before the command and are all introduced by
+a hyphen (@code{-}) character.  If the command itself begins with a hyphen, you
+must precede it with a double hyphen (@code{--}) argument as follows:
+
+@example
+serve [options] -- command
+@end example
+
+The command operand is any POSIX shell command.  It is evaluated as if by
+typing @command{sh -c command} in your terminal.  If it contains whitespace
+characters, you must either escape it with a backslash (@code{\ }) or put the
+whole command in-between single (@code{'}) or double (@code{"}) quote marks,
+the only difference being that shell macros are not expanded in single quote
+marks.
+
+The rest of @command{serve}'s behavior is detailed in the following sections.
+
+@menu
+* Options::   Summary of supported options
+* Addresses:: Supported network addresses
+@end menu
+
+@node Options
+@section Supported options
+@include options.texi
+
+@node Addresses
+@section Supported network addresses
+@include addresses.texi

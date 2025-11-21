@@ -1,0 +1,64 @@
+In order to open a server, you must specify a listening address implementing
+the network layer from the OSI model.  The @command{serve} utility allows you
+to do that by passing the @code{-a} option.
+
+The operand to the @code{-a} option is a string specifying the listening
+address.  It is made of space-separated ASCII tokens.  The first one specifies
+the address family and is case sensitive.  If no @code{-a} option is present,
+@code{serve} behaves as if @code{-a "inet 0.0.0.0 4869"} had been passed.
+
+@itemize @bullet{}
+
+@item
+The family @code{inet} corresponds to POSIX value @code{AF_INET} and specifies
+an IPv4 address.  The remainder of the operand must be two tokens specifying
+respectively the IPv4 address in dotted decimal notation and the port number in
+decimal notation.  The address is parsed by using the @code{inet_addr} function
+as defined by POSIX.  The port number must be non-negative and less than 65536.
+
+@itemize @bullet{}
+@item
+Specifying a machine's IP address means you will only accept incoming
+connections from that machine.  The special IP address @code{127.0.0.1} allows
+you to only accept connections from the same computer the server is running on.
+@item
+Specifying a network's IP address means you will accept incoming connections
+from any machine in that network.  The IP address @code{0.0.0.0} allows you to
+accept connections from any machine on the Internet.
+@end itemize
+
+@item
+The family @code{inet6} corresponds to POSIX value @code{AF_INET6} and
+specifies an IPv6 address.  The remainder of the operand must be two tokens
+specifying respectively the IPv6 address in standard form and the port number
+in decimal notation.  The address is parsed by using the @code{inet_pton}
+function as defined by POSIX.  The port number must be non-negative and less
+than 65536.
+
+@itemize @bullet{}
+@item
+Specifying a machine's IP address means you will only accept incoming
+connections from that machine.  The special IP address @code{::1} allows you to
+only accept connections from the same computer the server is running on.
+@item
+Specifying a network's IP address means you will accept incoming connections
+from any machine in that network.  The IP address @code{::} allows you to
+accept connections from any machine on the Internet.
+@end itemize
+
+@item
+The family @code{unix} corresponds to POSIX value @code{AF_UNIX} and specifies
+a Unix-domain socket.  The remainder of the operand must be the path to the
+socket file.  The maximum length of such a path is OS-specified.
+
+@item
+The family @code{vsock} is supported only on Linux.  It corresponds to Linux
+value @code{AF_VSOCK} and specifies a VSOCK address.  The remainder of the
+operand must be two non-negative integers in decimal notation specifying the
+port number and the context identifier respectively.
+
+@item
+The family @code{x25} is supported only on Linux.  It corresponds to Linux
+value @code{AF_X25} and specifies an X.25 address.  The remainder of the
+operand must be a sequence of at most 15 digits and specify the address itself.
+@end itemize

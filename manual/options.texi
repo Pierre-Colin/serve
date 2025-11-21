@@ -1,0 +1,35 @@
+By design, the behavior of @command{serve} can be customized by passing it
+options.  Each option has the form @code{-l x} or @code{-lx} where @var{l} is a
+single character identifying the option and @var{x} is the operand passed to
+it.  If @var{x} includes whitespace characters, quote marks must be used around
+either @var{x} if using the first form (@code{-l "x"}) or around the whole
+argument if using the second form (@code{"-lx"}).
+
+The following table summarizes all options supported by @command{serve}.
+
+@multitable @columnfractions .1 .3 .6
+@headitem Option @tab Default value @tab Description
+@item @code{-a} @tab @code{inet 0.0.0.0 4869} @tab
+	See @xref{Addresses}.
+@item @code{-b} @tab OS-specified @tab
+	Specify a hint for the size of the listen queue, or backlog.  This
+	queue contains the connection requests that the OS received but
+	@command{serve} has not accepted yet.  Since this is only a hint, the
+	effective size of the queue may be different from the one you provide.
+@item @code{-c} @tab OS-specified @tab
+	Specify an upper bound for the number of concurrent, already accepted
+	connections.  The effective limit may be lower depending on how your OS
+	manages file descriptors.  For more details, see the section on
+	awaiting connections.
+@item @code{-p} @tab None @tab
+	Reserved for specifying the transport-layer protocol; currently
+	unimplemented.
+@item @code{-t} @tab @code{stream} @tab
+	Specify the socket type.  Possible values are @code{stream} for a
+	byte-stream socket corresponding to POSIX value @code{SOCK_STREAM} and
+	@code{seqpacket} for a sequenced-packet socket corresponding to POSIX
+	value @code{SOCK_SEQPACKET}.  There is no value corresponding to POSIX
+	value @code{SOCK_DGRAM} because those are for connectionless-mode
+	sockets which do not fit well within the client-server architecture
+	that @command{serve} was designed for.
+@end multitable

@@ -35,6 +35,7 @@ for POSIX systems.
 @menu
 * Overview::                       A quick tour of @command{serve}.
 * Building::                       How to build @command{serve} from source.
+* Invoking::                       How to use @command{serve}.
 * GNU Free Documentation License:: How you can copy and share this manual.
 @end menu
 
@@ -48,7 +49,11 @@ for POSIX systems.
 @chapter Building
 @include build.texi
 
-@c TODO: Invoking, Sessions, Copying (GPL)
+@node Invoking
+@chapter Invoking @command{serve}
+@include invoking.texi
+
+@c TODO: Sessions, Copying (GPL)
 
 @node GNU Free Documentation License
 @appendix GNU Free Documentation License
