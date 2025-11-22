@@ -7,15 +7,11 @@ address.  It is made of space-separated ASCII tokens.  The first one specifies
 the address family and is case sensitive.  If no @code{-a} option is present,
 @code{serve} behaves as if @code{-a "inet 0.0.0.0 4869"} had been passed.
 
-@itemize @bullet{}
-
-@item
-The family @code{inet} corresponds to POSIX value @code{AF_INET} and specifies
-an IPv4 address.  The remainder of the operand must be two tokens specifying
-respectively the IPv4 address in dotted decimal notation and the port number in
-decimal notation.  The address is parsed by using the @code{inet_addr} function
-as defined by POSIX.  The port number must be non-negative and less than 65536.
-
+@deffn {Address} inet address port
+Uses POSIX family @code{AF_INET} to specify an IPv4 address.  The token
+@var{address} must be an IPv4 address in dotted decimal notation.  The token
+@var{port} must be a port number in decimal notation (between 1 and 65535).
+The address is parsed as if by the POSIX function @code{inet_addr}.
 @itemize @bullet{}
 @item
 Specifying a machine's IP address means you will only accept incoming
@@ -27,14 +23,14 @@ from any machine in that network.  The IP address @code{0.0.0.0} allows you to
 accept connections from any machine on the Internet.
 @end itemize
 
-@item
-The family @code{inet6} corresponds to POSIX value @code{AF_INET6} and
-specifies an IPv6 address.  The remainder of the operand must be two tokens
-specifying respectively the IPv6 address in standard form and the port number
-in decimal notation.  The address is parsed by using the @code{inet_pton}
-function as defined by POSIX.  The port number must be non-negative and less
-than 65536.
+These addresses are only compatible with sockets of type @code{stream}.
+@end deffn
 
+@deffn {Address} inet6 address port
+Uses POSIX family @code{AF_INET6} to specify an IPv6 address.  The token
+@var{address} must be an IPv6 address in standard notation.  The token
+@var{port} must be a port number in decimal notation (between 1 and 65535).
+The address is parsed as if by the POSIX function @code{inet_pton}.
 @itemize @bullet{}
 @item
 Specifying a machine's IP address means you will only accept incoming
@@ -46,19 +42,31 @@ from any machine in that network.  The IP address @code{::} allows you to
 accept connections from any machine on the Internet.
 @end itemize
 
-@item
-The family @code{unix} corresponds to POSIX value @code{AF_UNIX} and specifies
-a Unix-domain socket.  The remainder of the operand must be the path to the
-socket file.  The maximum length of such a path is OS-specified.
+These addresses are only compatible with sockets of type @code{stream}.
+@end deffn
 
-@item
-The family @code{vsock} is supported only on Linux.  It corresponds to Linux
-value @code{AF_VSOCK} and specifies a VSOCK address.  The remainder of the
-operand must be two non-negative integers in decimal notation specifying the
-port number and the context identifier respectively.
+@deffn {Address} unix path
+Uses POSIX family @code{AF_UNIX} to specify a Unix-domain socket.  The token
+@var{path} is the path to the socket file to be created.  The maximum length
+supported for the path depends on the OS.
 
-@item
-The family @code{x25} is supported only on Linux.  It corresponds to Linux
-value @code{AF_X25} and specifies an X.25 address.  The remainder of the
-operand must be a sequence of at most 15 digits and specify the address itself.
-@end itemize
+These addresses are compatible with both socket types.
+@end deffn
+
+@deffn {Address} vsock port context
+Linux only.  Uses family @code{AF_VSOCK} to specify a VSOCK address.  The
+tokens @var{port} and @var{context} are both non-negative integers in decimal
+notation.  They specify the port number and the context identifier
+respectively.
+
+These addresses are only compatible with sockets of type @code{stream}.
+@end deffn
+
+@deffn {Address} x25 address
+Linux only.  Uses family @code{AF_X25} to specify an X.25 address for a network
+as defined in @url{https://www.iso.org/standard/33080.html,,ISO/IEC 8208}.  The
+token @var{address} specifies the X.25 address and consists of up to 15 decimal
+characters.
+
+These addresses are only compatible with sockets of type @code{seqpacket}.
+@end deffn
