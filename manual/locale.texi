@@ -1,0 +1,21 @@
+The @command{serve} utility sets its global locale with the following C
+function call.
+
+@example
+setlocale (LC_ALL, "");
+@end example
+
+As a result, some aspects of its behavior may be influenced by the following
+environment variables, especially @var{LC_NUMERIC} and @var{LC_MESSAGES}:
+
+@itemize
+@item @var{LC_CTYPE};
+@item @var{LC_COLLATE};
+@item @var{LC_MONETARY};
+@item @var{LC_NUMERIC};
+@item @var{LC_TIME};
+@item @var{LC_MESSAGES}.
+@end itemize
+
+This change of locale does not affect child processes that @command{serve}
+creates.

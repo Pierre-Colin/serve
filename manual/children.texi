@@ -1,0 +1,70 @@
+Once @command{serve} is done initializing, it starts waiting for connections.
+
+Each connection, when accepted, is handled by a child process that runs the
+command operand passed to @command{serve}.  Before running the command though,
+@command{serve} configures the process in four different ways.
+
+@enumerate
+@item
+Its standard input is rewired directly to the socket created by accepting the
+connection.  Thus any data received by the server goes straight to the child
+process.
+
+@item
+Its standard output is rewired directly to the same socket.  Thus any data the
+command running in the child process prints in its standard output goes
+straight to the remote client.
+
+@item
+A POSIX pipe is set, and the child process's error output is rewired into its
+input file descriptor.  This allows @command{serve} to receive it in a
+controlled manner.  Specifically, @command{serve} buffers it by lines.  Each
+time a line feed character is received, @command{serve} prints the buffered
+line in its standard output prepended by the process ID of the corresponding
+child process.
+
+@item
+The environment variable @var{REMOTE} is set to a representation of the remote
+address that uses the same format laid out in @xref{Addresses} except that the
+first token identifying the address family is absent.
+@end enumerate
+
+If any of these operations fail, @command{serve} closes the connection.
+Otherwise, it logs the process ID of the child process it created and the
+remote address (the same described in step 4 above) in a line that looks as
+follows.
+
+@example
+Process 468 created (127.0.0.1 54689)
+@end example
+
+When the child process terminates in any way, @command{serve} closes the socket
+that was created by accepting the connection, thereby ending it.  It then logs
+the status code of the process in a line that looks as follows.
+
+@example
+Process 468 exited (0)
+@end example
+
+Because creating a child process is costly, it's a good idea to limit them.
+This is the use for the @code{-c} option as described in @xref{Options}.  If
+the maximum number of allowed connections is already reached, @command{serve}
+will not immediately accept the next connection upon receiving it.  Instead,
+it will wait for a current connection to end, keeping the next connection
+request in the OS-managed listen queue.  The @code{-b} option recommends a size
+for said listen queue to the OS, but the effective size may be greater or
+lower.  If the listen queue is full, all additional connections will be
+declined.
+
+A lot of desirable properties of sessions are not enforced by @command{serve}
+at all and are thus the responsibility of the person configuring the command
+run in child processes.  These include:
+
+@itemize
+@item enforcing a time limit on connections;
+@item session-layer utilities such as context management;
+@item presentation-layer utilities such as TLS;
+@item sharing memory between child processes;
+@item handling @code{SIGPIPE} to not crash when trying to write after a
+connection is closed.
+@end itemize

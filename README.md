@@ -28,8 +28,8 @@ Building `serve` is as easy as running `make`.
 For more advanced builds, consult the manual.  You can do so with the following
 commandsd.  They require [GNU Texinfo](https://www.gnu.org/software/texinfo/).
 
-```bash
-texi2any -D "VERSION 0.1" -D "UPDATED 2025-11-20" manual/serve.texi
+```sh
+make info
 info serve.info
 ```
 
@@ -42,7 +42,7 @@ read it with the `man -l serve.tr` command.
 The simplest way to test `serve` is with the following commands in two
 different terminals.
 
-```bash
+```sh
 # Terminal 1
 serve -a "inet 127.0.0.1 5000" cat
 

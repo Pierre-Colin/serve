@@ -11,8 +11,20 @@ remote.o: remote.c
 serve.o: serve.c command.h sessions.h
 sessions.o: sessions.c command.h qualfd.h remote.h sessions.h
 
+info: serve.info
+
+serve.info: manual/addresses.texi\
+	manual/build.texi\
+	manual/children.texi\
+	manual/invoking.texi\
+	manual/locale.texi\
+	manual/options.texi\
+	manual/overview.texi\
+	manual/serve.texi
+	$(MAKEINFO) manual/serve.texi
+
 clean:
-	rm -f serve $(OBJ)
+	rm -f serve $(OBJ) serve.info
 
 dist: clean
 	tar -cvJf serve.tar.xz Makefile serve.tr $(OBJ:.o=.c)
